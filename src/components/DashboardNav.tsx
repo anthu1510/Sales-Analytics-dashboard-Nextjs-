@@ -10,8 +10,7 @@ const navItems = [
   { label: 'Product Comparison', href: '/dashboard/products' },
   { label: 'Sales Reps', href: '/dashboard/reps' },
   { label: 'Monthly Growth', href: '/dashboard/growth' },
-  { label: 'Top Products', href: '/dashboard/top-products' },
-  { label: 'Filters', href: '/dashboard/filters' }
+  { label: 'Top Products', href: '/dashboard/top-products' }
 ];
 
 export default function DashboardNav() {

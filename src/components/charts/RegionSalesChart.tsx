@@ -9,7 +9,8 @@ import {
   ResponsiveContainer,
   CartesianGrid
 } from 'recharts';
-import useFilteredSales, { FilterOptions } from '../../hooks/useFilteredSales';
+import useFilteredSales from '../../hooks/useFilteredSales';
+import { FilterOptions } from '@/lib/types';
 
 interface SalesRecord {
   Region: string;

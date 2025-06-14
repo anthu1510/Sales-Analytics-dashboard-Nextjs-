@@ -1,12 +1,5 @@
 import { useEffect, useState } from "react";
-import { SalesRecord } from "@/lib/types";
-
-export interface FilterOptions {
-  dateRange?: [string, string]; // format: 'YYYY-MM-DD'
-  region?: string;
-  productCategory?: string;
-  salesRep?: string;
-}
+import { SalesRecord, FilterOptions } from "@/lib/types";
 
 export default function useFilteredSales(filters: FilterOptions = {}) {
   const [data, setData] = useState<SalesRecord[]>([]);

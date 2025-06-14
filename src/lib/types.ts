@@ -18,3 +18,10 @@ export interface SalesRecord {
   Customer_Type: string;
   Customer_Name: string;
 }
+
+export interface FilterOptions {
+  dateRange?: [string, string]; // format: 'YYYY-MM-DD'
+  region?: string;
+  productCategory?: string;
+  salesRep?: string;
+}

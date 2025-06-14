@@ -1,13 +1,26 @@
-import DashboardNav from '../../../components/DashboardNav';
-import GrowthRateChart from '../../../components/charts/GrowthRateChart';
-import ChartCard from '../../../components/ui/ChartCard';
+"use client";
+
+import { useState } from "react";
+import DashboardNav from "../../../components/DashboardNav";
+import GrowthRateChart from "../../../components/charts/GrowthRateChart";
+import ChartCard from "../../../components/ui/ChartCard";
+import useFilteredSales from "@/hooks/useFilteredSales";
+import FilterPanel from "../../../components/FilterPanel";
+import { FilterOptions } from "@/lib/types";
 
 export default function GrowthPage() {
+  const [filters, setFilters] = useState<FilterOptions>({});
+  const { data: filteredSales } = useFilteredSales(filters);
   return (
     <div className="grid gap-6 md:grid-cols-1">
       <DashboardNav />
+      <FilterPanel
+        filters={filters}
+        setFilters={setFilters}
+        data={filteredSales}
+      />
       <ChartCard title="Growth by month">
-        <GrowthRateChart />
+        <GrowthRateChart filters={filters} />
       </ChartCard>
     </div>
   );

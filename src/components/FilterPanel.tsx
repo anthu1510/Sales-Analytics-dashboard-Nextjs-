@@ -1,72 +1,112 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { FilterOptions } from '@/hooks/useFilteredSales';
-import { exportToPDF } from '@/utils/exportToPDF';
+import { useEffect, useState } from 'react';
+import { exportToCSV, exportToPDF } from '@/lib/exportUtils';
+import { SalesRecord, FilterOptions } from '@/lib/types';
 
 interface FilterPanelProps {
   filters: FilterOptions;
   setFilters: (filters: FilterOptions) => void;
-  dataToExport: object[];
-  exportFileName: string;
+  data: SalesRecord[];
 }
 
-export default function FilterPanel({
-  filters,
-  setFilters,
-  dataToExport,
-  exportFileName,
-}: FilterPanelProps) {
-  const [localFilters, setLocalFilters] = useState<FilterOptions>(filters);
+export default function FilterPanel({ filters, setFilters, data }: FilterPanelProps) {
+  const [regions, setRegions] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [reps, setReps] = useState<string[]>([]);
 
-  const handleApply = () => {
-    setFilters(localFilters);
+  useEffect(() => {
+    if (!data || data.length === 0) return;
+
+    const unique = <K extends keyof SalesRecord>(key: K): string[] => {
+      return [...new Set(data.map((d) => d[key]))].filter(Boolean) as string[];
+    };
+
+    setRegions(unique('Region'));
+    setCategories(unique('Product_Category'));
+    setReps(unique('Sales_Rep'));
+  }, [data]);
+
+  const handleDateChange = (index: 0 | 1, value: string) => {
+    const updated = [...(filters.dateRange || ['', ''])] as [string, string];
+    updated[index] = value;
+    setFilters({ ...filters, dateRange: updated });
   };
 
   return (
-    <div className="bg-white p-4 shadow rounded-md mb-4 flex flex-col md:flex-row justify-between items-center gap-4">
-      <div className="flex flex-wrap gap-2 items-center">
-        {/* Example filter: Add more as needed */}
-        <input
-          type="text"
-          placeholder="Region"
-          value={localFilters.region || ''}
-          onChange={(e) => setLocalFilters({ ...localFilters, region: e.target.value })}
-          className="border px-2 py-1 rounded"
-        />
-        <input
-          type="text"
-          placeholder="Product Category"
-          value={localFilters.productCategory || ''}
-          onChange={(e) => setLocalFilters({ ...localFilters, productCategory: e.target.value })}
-          className="border px-2 py-1 rounded"
-        />
-        <input
-          type="text"
-          placeholder="Sales Rep"
-          value={localFilters.salesRep || ''}
-          onChange={(e) => setLocalFilters({ ...localFilters, salesRep: e.target.value })}
-          className="border px-2 py-1 rounded"
-        />
-        <button
-          onClick={handleApply}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+    <div className="p-4 bg-white rounded-md shadow flex flex-wrap gap-4 items-end">
+      <div>
+        <label className="block text-sm font-medium">Region</label>
+        <select
+          className="border p-2 rounded"
+          value={filters.region || ''}
+          onChange={(e) => setFilters({ ...filters, region: e.target.value || undefined })}
         >
-          Apply Filters
-        </button>
+          <option value="">All</option>
+          {regions.map((r) => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
       </div>
 
-      {/* Export Buttons */}
-      <div className="flex gap-2">
+      <div>
+        <label className="block text-sm font-medium">Product Category</label>
+        <select
+          className="border p-2 rounded"
+          value={filters.productCategory || ''}
+          onChange={(e) => setFilters({ ...filters, productCategory: e.target.value || undefined })}
+        >
+          <option value="">All</option>
+          {categories.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium">Sales Rep</label>
+        <select
+          className="border p-2 rounded"
+          value={filters.salesRep || ''}
+          onChange={(e) => setFilters({ ...filters, salesRep: e.target.value || undefined })}
+        >
+          <option value="">All</option>
+          {reps.map((r) => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium">From Date</label>
+        <input
+          type="date"
+          className="border p-2 rounded"
+          value={filters.dateRange?.[0] || ''}
+          onChange={(e) => handleDateChange(0, e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium">To Date</label>
+        <input
+          type="date"
+          className="border p-2 rounded"
+          value={filters.dateRange?.[1] || ''}
+          onChange={(e) => handleDateChange(1, e.target.value)}
+        />
+      </div>
+
+      <div className="ml-auto flex gap-2">
         <button
-          onClick={() => exportToPDF(dataToExport, exportFileName)}
-          className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+          className="bg-blue-500 text-white px-4 py-2 rounded"
+          onClick={() => exportToCSV(data)}
         >
           Export CSV
         </button>
         <button
-          onClick={() => exportToPDF(dataToExport, exportFileName)}
-          className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+          className="bg-red-500 text-white px-4 py-2 rounded"
+          onClick={() => exportToPDF(data)}
         >
           Export PDF
         </button>

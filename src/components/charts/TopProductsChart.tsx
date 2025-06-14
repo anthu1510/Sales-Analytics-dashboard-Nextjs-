@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import {
   PieChart,
@@ -9,6 +10,8 @@ import {
   Legend
 } from 'recharts';
 import { SalesRecord } from '@/lib/types';
+import useFilteredSales from '@/hooks/useFilteredSales';
+import { FilterOptions } from "@/lib/types";
 
 interface TopProduct {
   name: string;
@@ -17,29 +20,32 @@ interface TopProduct {
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
-export default function TopProductsChart() {
+export default function TopProductsChart({ filters }: { filters: FilterOptions }) {
+  const { data: filteredSales, loading, error } = useFilteredSales(filters);
   const [data, setData] = useState<TopProduct[]>([]);
 
   useEffect(() => {
-    fetch('/api/sales')
-      .then(res => res.json())
-      .then(json => {
-        const grouped = json.data.reduce((acc: Record<string, number>, cur: SalesRecord) => {
-          acc[cur.Product_Name] = (acc[cur.Product_Name] || 0) + cur.Total_Revenue;
-          return acc;
-        }, {});
+    if (filteredSales.length === 0) {
+      setData([]);
+      return;
+    }
 
-        const allProducts = Object.entries(grouped).map(([name, revenue]) => ({
-          name,
-          revenue: Number(revenue)
-        }));
+    const grouped = filteredSales.reduce((acc: Record<string, number>, cur: SalesRecord) => {
+      acc[cur.Product_Name] = (acc[cur.Product_Name] || 0) + cur.Total_Revenue;
+      return acc;
+    }, {});
 
-        // Sort by revenue and get top 5
-        const topProducts = allProducts.sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+    const allProducts = Object.entries(grouped).map(([name, revenue]) => ({
+      name,
+      revenue: Number(revenue)
+    }));
 
-        setData(topProducts);
-      });
-  }, []);
+    const topProducts = allProducts.sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+    setData(topProducts);
+  }, [filteredSales]);
+
+  if (loading) return <p className="text-gray-500 p-4">Loading chart...</p>;
+  if (error) return <p className="text-red-500 p-4">{error}</p>;
 
   return (
     <ResponsiveContainer width="100%" height={300}>

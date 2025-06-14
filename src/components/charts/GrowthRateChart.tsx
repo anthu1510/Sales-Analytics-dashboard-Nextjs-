@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import {
   AreaChart,
@@ -10,41 +11,44 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { SalesRecord } from '@/lib/types';
+import useFilteredSales from '@/hooks/useFilteredSales';
+import { FilterOptions } from "@/lib/types";
 
 interface GrowthChartData {
   month: string;
   revenue: number;
 }
 
-export default function GrowthRateChart() {
+export default function GrowthRateChart({ filters }: { filters: FilterOptions }) {
+  const { data: filteredSales, loading, error } = useFilteredSales(filters);
   const [data, setData] = useState<GrowthChartData[]>([]);
 
   useEffect(() => {
-    fetch('/api/sales')
-      .then((res) => res.json())
-      .then((json) => {
-        const monthly = json.data.reduce((acc: Record<string, number>, cur: SalesRecord) => {
-          const [day, month, year] = cur.Date.split('-');
-          const key = `${year}-${month}`;
-          acc[key] = (acc[key] || 0) + cur.Total_Revenue;
-          return acc;
-        }, {});
+    if (filteredSales.length === 0) {
+      setData([]);
+      return;
+    }
 
-        const chartData: GrowthChartData[] = Object.entries(monthly).map(([month, revenue]) => ({
-          month,
-          revenue: Number(revenue),
-        }));
+    const monthly = filteredSales.reduce((acc: Record<string, number>, cur: SalesRecord) => {
+      const [day, month, year] = cur.Date.split('-');
+      const key = `${year}-${month}`; // e.g., 2024-05
+      acc[key] = (acc[key] || 0) + cur.Total_Revenue;
+      return acc;
+    }, {});
 
-        setData(chartData);
-      });
-  }, []);
+    const chartData: GrowthChartData[] = Object.entries(monthly)
+      .map(([month, revenue]) => ({ month, revenue: Number(revenue) }))
+      .sort((a, b) => a.month.localeCompare(b.month)); // sort chronologically
+
+    setData(chartData);
+  }, [filteredSales]);
+
+  if (loading) return <p className="text-gray-500 p-4">Loading chart...</p>;
+  if (error) return <p className="text-red-500 p-4">{error}</p>;
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <AreaChart
-        data={data}
-        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-      >
+      <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />

@@ -10,45 +10,44 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from 'recharts';
-import { SalesRecord } from '@/lib/types';
+import useFilteredSales from '@/hooks/useFilteredSales';
+import { SalesRecord, FilterOptions} from '@/lib/types';
 
 interface ChartData {
   product: string;
   revenue: number;
 }
 
-export default function ProductComparisonChart() {
-  const [data, setData] = useState<ChartData[]>([]);
+export default function ProductComparisonChart({ filters }: { filters: FilterOptions }) {
+  const { data: filteredSales, loading, error } = useFilteredSales(filters);
+  const [chartData, setChartData] = useState<ChartData[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch('/api/sales');
-        const json = await res.json();
+    if (filteredSales.length === 0) {
+      setChartData([]);
+      return;
+    }
 
-        const grouped = json.data.reduce((acc: Record<string, number>, cur: SalesRecord) => {
-          const name = cur.Product_Name;
-          acc[name] = (acc[name] || 0) + cur.Total_Revenue;
-          return acc;
-        }, {});
+    const grouped = filteredSales.reduce((acc: Record<string, number>, cur: SalesRecord) => {
+      const name = cur.Product_Name;
+      acc[name] = (acc[name] || 0) + cur.Total_Revenue;
+      return acc;
+    }, {});
 
-        const chartData: ChartData[] = Object.entries(grouped).map(([product, revenue]) => ({
-          product,
-          revenue: Number(revenue)
-        }));
+    const data: ChartData[] = Object.entries(grouped).map(([product, revenue]) => ({
+      product,
+      revenue: Number(revenue),
+    }));
 
-        setData(chartData);
-      } catch (error) {
-        console.error('Failed to load product comparison data:', error);
-      }
-    };
+    setChartData(data);
+  }, [filteredSales]);
 
-    fetchData();
-  }, []);
+  if (loading) return <p className="text-gray-500 p-4">Loading chart...</p>;
+  if (error) return <p className="text-red-500 p-4">{error}</p>;
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data}>
+      <BarChart data={chartData}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="product" />
         <YAxis />
